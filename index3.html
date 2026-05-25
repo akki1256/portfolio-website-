@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>To-Do App</title>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --card:rgba(255,255,255,.08);
+  --text:#f8fafc;
+  --primary:#38bdf8;
+  --danger:#ef4444;
+  --glass:blur(18px);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  font:16px 'Segoe UI',sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left,#1e3a8a,transparent 40%),
+    radial-gradient(circle at bottom right,#0891b2,transparent 40%),
+    var(--bg);
+}
+
+.app{
+  width:min(100%,550px);
+  padding:28px;
+  border-radius:24px;
+  background:var(--card);
+  backdrop-filter:var(--glass);
+  box-shadow:0 20px 40px rgba(0,0,0,.35);
+}
+
+h1{
+  text-align:center;
+  margin-bottom:24px;
+  font-size:2.2rem;
+}
+
+form,
+.filters,
+.task,
+.actions{
+  display:flex;
+  gap:10px;
+}
+
+input,
+button,
+textarea{
+  border:none;
+  outline:none;
+  border-radius:14px;
+  padding:14px;
+  font-size:1rem;
+}
+
+input{
+  flex:1;
+  background:rgba(255,255,255,.12);
+  color:#fff;
+}
+
+input::placeholder{
+  color:#cbd5e1;
+}
+
+button{
+  cursor:pointer;
+  transition:.25s;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+}
+
+button:hover{
+  transform:translateY(-2px) scale(1.02);
+  opacity:.9;
+}
+
+.filters{
+  margin:22px 0;
+}
+
+.filters button{
+  flex:1;
+  background:rgba(255,255,255,.12);
+}
+
+#tasks{
+  display:grid;
+  gap:14px;
+}
+
+.task{
+  justify-content:space-between;
+  align-items:center;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.08);
+  animation:fade .3s ease;
+}
+
+.task span{
+  flex:1;
+  word-break:break-word;
+}
+
+.task.completed span{
+  text-decoration:line-through;
+  opacity:.55;
+}
+
+.actions button{
+  padding:10px 12px;
+}
+
+.delete{
+  background:var(--danger);
+}
+
+@keyframes fade{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(max-width:600px){
+  form,.filters,.task{
+    flex-direction:column;
+  }
+
+  .actions{
+    width:100%;
+  }
+
+  .actions button{
+    flex:1;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>To-Do List</h1>
+
+  <form id="todoForm">
+    <input id="taskInput" type="text" placeholder="Add a task" required>
+    <button>Add</button>
+  </form>
+
+  <div class="filters">
+    <button data-filter="all">All</button>
+    <button data-filter="active">Active</button>
+    <button data-filter="completed">Completed</button>
+  </div>
+
+  <div id="tasks"></div>
+</div>
+
+<script>
+const form = document.getElementById('todoForm')
+const input = document.getElementById('taskInput')
+const tasksEl = document.getElementById('tasks')
+const filters = document.querySelector('.filters')
+
+let tasks = JSON.parse(localStorage.getItem('tasks')) || []
+let filter = 'all'
+
+const save = () => localStorage.setItem('tasks', JSON.stringify(tasks))
+
+const render = () => {
+  tasksEl.innerHTML = ''
+
+  tasks
+    .filter(task =>
+      filter === 'active' ? !task.done :
+      filter === 'completed' ? task.done : true
+    )
+    .forEach(task => {
+      tasksEl.innerHTML += `
+        <div class="task ${task.done ? 'completed' : ''}" data-id="${task.id}">
+          <span>${task.text}</span>
+          <div class="actions">
+            <button class="toggle">✓</button>
+            <button class="edit">Edit</button>
+            <button class="delete">X</button>
+          </div>
+        </div>
+      `
+    })
+}
+
+form.addEventListener('submit', e => {
+  e.preventDefault()
+
+  tasks.push({
+    id: Date.now(),
+    text: input.value,
+    done: false
+  })
+
+  input.value = ''
+  save()
+  render()
+})
+
+filters.addEventListener('click', e => {
+  if(e.target.dataset.filter){
+    filter = e.target.dataset.filter
+    render()
+  }
+})
+
+tasksEl.addEventListener('click', e => {
+  const id = +e.target.closest('.task').dataset.id
+  const task = tasks.find(t => t.id === id)
+
+  if(e.target.classList.contains('toggle')){
+    task.done = !task.done
+  }
+
+  if(e.target.classList.contains('delete')){
+    tasks = tasks.filter(t => t.id !== id)
+  }
+
+  if(e.target.classList.contains('edit')){
+    const text = prompt('Edit task', task.text)
+    if(text) task.text = text
+  }
+
+  save()
+  render()
+})
+
+render()
+</script>
+
+</body>
+</html>
